@@ -1,0 +1,96 @@
+gpu: True
+dt: 0.01 # model trained at constant dt, changes will likely lead to inaccuracies
+inlet_vel_profile: constant # Parabolic doesn't work well with base mgn model, likely due to non varying inlet pressure training data
+# training mesh also did not include inflation boundary layer meshes so model struggles around boundary layers
+inlet_vel: 2.0 # keep between [1,2] for best results. Model can extrapolate outside of range but with decreasing accuracy
+# velocity field exhibit "stickyness", may be overfitting problems
+outlet_p: 0.0 # Model not trained on other outlet pressures, changing this will not yield meaningful results
+
+initial_conditions:
+  field_fname: ic/cylinder_4_v_2.00_z.pt
+  pos_fname: ic/cylinder_4_v_2.00_q_0.pt
+  edge_fname: ic/cylinder_4_v_2.00_edge_index.pt
+  n_fname: ic/cylinder_4_v_2.00_n.pt
+  initial_iter: 0
+  reset_state: False # reset state to 0 and linear pressure
+
+  pkl_fname: False #replace with file name if loading from pickle file from saved state. Will preferrentially load pickle file over above initial conditions
+
+# dimensions of each parameter
+dims:
+  z: 3 # state vector (u1,u2,p); do not change
+  q: 0  
+  q_0: 2 # static position vector used to calculate edge attributes (x1,x2); do not change
+  n: 4 # number of node types (internal, inlet, outlet, wall); do not change
+  f: 0 
+  g: 0 
+  d: 0 # direct prediction values, change to 1 if using direct pressure model as in original mesh graph net paper
+
+# Solver model (either mesh graph net or thermodynamics informed graph neural network)
+model:
+  model_type: mgn
+  model_location: models/params_cylinder.pt # mgn with derivitives
+  # model_location: models/params_cylinder_direct.pt # mgn with direct predictions for pressure, did not work well
+  # model_type: tignn
+  # model_location: models/params_cylinder_tignn.pt 
+
+  model_attributes:
+    n_hidden: 2 # number of hidden layers in model
+    dim_hidden: 128 # dimension of hidden layers and latent space in model
+    passes: 8 # number of passes through edges
+
+# model:
+#   model_type: mgn
+#   model_location: models/params_vortex.pt # mgn with direct
+
+#   model_attributes:
+#     n_hidden: 2 # number of hidden layers in model
+#     dim_hidden: 128 # dimension of hidden layers and latent space in model
+#     passes: 8 # number of passes through edges
+
+# Remeshing flow match model (either includes global encoding or just local encodings)
+fm_mesh:
+  model_type: global
+
+  # uses ReLU except for last decoder, if desired, must change model.py code to all ReLU except last decoder
+  # model_location: models/fm_mesh_model_global.pt
+  # std_scaling: 0.25
+
+  # model_attributes:
+  #   n_hidden: 2
+  #   dim_hidden: 64
+  #   passes: 8
+
+  model_location: models/fm_mesh_model_global1.pt
+  std_scaling: 0.5
+  model_attributes:
+    n_hidden: 2
+    dim_hidden: 64
+    passes: 12
+
+# Normalization parameters from training
+norm_stats:
+  stats_z:
+    mean: [1.37000167e+00, -5.79022290e-02, 2.30710119e-01]
+    std: [8.11523557e-01, 2.94183582e-01, 7.43897438e-01]
+  stats_q:
+    mean: [8.88754782e-12, -2.90865205e-12]
+    std: [1.95575710e-02, 1.90107096e-02]
+
+# norm_stats:
+#   stats_z:
+#     mean: 'stats/vortex_mean_1'
+#     std: 'stats/vortex_std_1'
+#   stats_q:
+#     mean: 'stats/vortex_mean_2'
+#     std: 'stats/vortex_std_2'
+
+# shader directory for opengl shaders
+shader_dir: shaders
+
+# screen display parameters
+screen_parameters:
+  width: 800
+  height: 600
+  line_width: 2
+  point_radius: 5

@@ -1,7 +1,7 @@
 import os
 import warnings
 import yaml
-import sys
+import argparse
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 warnings.filterwarnings('ignore')
@@ -13,12 +13,11 @@ from src.solver import Solver
 from src.utils.initialization import load_in
 
 def main():
-    if len(sys.argv) > 1:
-        parameter_fname = sys.argv[1]
-    else:
-        parameter_fname = 'parameters.yaml'
-    # parameter_fname = 'vortex_mgn_parameters.yaml'
-    with open(parameter_fname,'r') as f:
+    parser = argparse.ArgumentParser(description='Interactive GNN interface')
+    parser.add_argument('--parameter',default='parameters.yaml',type=str,help='YAML parameter file for parameters of simulation and interface')
+    args = parser.parse_args()
+
+    with open(args.parameter,'r') as f:
         solver_inputs = yaml.load(f,Loader=yaml.FullLoader)
 
 

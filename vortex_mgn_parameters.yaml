@@ -50,11 +50,11 @@ fm_mesh:
 # Normalization parameters from training
 norm_stats:
   stats_z:
-    mean: 'stats/vortex_mean_1'
-    std: 'stats/vortex_std_1'
+    mean: 'stats/vortex_mean_1.pt'
+    std: 'stats/vortex_std_1.pt'
   stats_q:
-    mean: 'stats/vortex_mean_2'
-    std: 'stats/vortex_std_2'
+    mean: 'stats/vortex_mean_2.pt'
+    std: 'stats/vortex_std_2.pt'
 
 # shader directory for opengl shaders
 shader_dir: shaders

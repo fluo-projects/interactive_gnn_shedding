@@ -105,8 +105,8 @@ class Solver(object):
                 z += self.dt*net_out
             else:
                 derivitive = z[:,:-self.dims['d']] + self.dt*net_out[:,:-self.dims['d']]
-                derived = net_out[:,-self.dims['d']:]
-                z = torch.cat([derivitive,derived],dim=1)[:]
+                direct = net_out[:,-self.dims['d']:]
+                z = torch.cat([derivitive,direct],dim=1)[:]
 
             self.net_out = net_out
         self.z = z

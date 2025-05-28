@@ -6,14 +6,12 @@ import warnings
 import yaml
 import tqdm
 import torch
-import pickle
-# import numpy as np
-from mpl_toolkits.axes_grid1 import make_axes_locatable
+import argparse
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 warnings.filterwarnings('ignore')
 
-from torch_geometric.data import Data
+# from torch_geometric.data import Data
 from scipy.optimize import linear_sum_assignment
 
 from src.interface import Interface
@@ -23,16 +21,19 @@ from src.utils.generate_mesh import generate_mesh
 from src.utils.initialization import load_in
 
 import matplotlib.cm as cm
-from anim.anim_utils import *
+from src.utils.anim_utils import *
 
 def main():
-    parameter_fname = 'parameters.yaml'
-    # parameter_fname = 'vortex_mgn_parameters.yaml'
-    anim_parameters_fname = 'anim/anim_parameters.yaml'
+    parser = argparse.ArgumentParser(description='Interactive GNN interface')
 
-    with open(parameter_fname,'r') as f:
+    parser.add_argument('--parameter',default='parameters.yaml',type=str,help='YAML parameter file for parameters of simulation and interface')
+    parser.add_argument('--anim_parameter',default='anim_parameters.yaml',type=str,help='YAML parameter file for parameters of simulation and interface')
+
+    args = parser.parse_args()
+
+    with open(args.parameter,'r') as f:
         solver_inputs = yaml.load(f,Loader=yaml.FullLoader)
-    with open(anim_parameters_fname,'r') as f:
+    with open(args.anim_parameter,'r') as f:
         anim_parameters = yaml.load(f,Loader=yaml.FullLoader)
     
     solver = Solver(solver_inputs)

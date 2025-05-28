@@ -70,20 +70,26 @@ fm_mesh:
 
 # Normalization parameters from training
 norm_stats:
+  # stats_z:
+  #   mean: [1.37000167e+00, -5.79022290e-02, 2.30710119e-01]
+  #   std: [8.11523557e-01, 2.94183582e-01, 7.43897438e-01]
+  # stats_q:
+  #   mean: [8.88754782e-12, -2.90865205e-12]
+  #   std: [1.95575710e-02, 1.90107096e-02]
   stats_z:
-    mean: [1.37000167e+00, -5.79022290e-02, 2.30710119e-01]
-    std: [8.11523557e-01, 2.94183582e-01, 7.43897438e-01]
+    mean: 'stats/cylinder_mean_1.pt'
+    std: 'stats/cylinder_std_1.pt'
   stats_q:
-    mean: [8.88754782e-12, -2.90865205e-12]
-    std: [1.95575710e-02, 1.90107096e-02]
+    mean: 'stats/cylinder_mean_2.pt'
+    std: 'stats/cylinder_std_2.pt'
 
 # norm_stats:
 #   stats_z:
-#     mean: 'stats/vortex_mean_1'
-#     std: 'stats/vortex_std_1'
+#     mean: 'stats/vortex_mean_1.pt'
+#     std: 'stats/vortex_std_1.pt'
 #   stats_q:
-#     mean: 'stats/vortex_mean_2'
-#     std: 'stats/vortex_std_2'
+#     mean: 'stats/vortex_mean_2.pt'
+#     std: 'stats/vortex_std_2.pt'
 
 # shader directory for opengl shaders
 shader_dir: shaders

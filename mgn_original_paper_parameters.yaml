@@ -1,0 +1,67 @@
+gpu: True
+dt: 0.01 # model trained at constant dt, changes will likely lead to inaccuracies
+inlet_vel_profile: parabolic # inlet_vel: 1.0 # keep between [1,2] for best results. Model can extrapolate outside of range but with decreasing accuracy
+inlet_vel: 2.8 # keep between [1,2] for best results. Model can extrapolate outside of range but with decreasing accuracy
+outlet_p: 0.0 # Model not trained on other outlet pressures, changing this will not yield meaningful results
+
+initial_conditions:
+  field_fname: ic/test_00000_z.pt
+  pos_fname: ic/test_00000_q_0.pt
+  edge_fname: ic/test_00000_edge_index.pt
+  n_fname: ic/test_00000_n.pt
+  initial_iter: 200
+
+  reset_state: False # reset state to 0
+
+  pkl_fname: False #replace with file name if loading from pickle file from saved state. Will preferrentially load pickle file over above initial conditions
+
+
+# dimensions of each parameter
+dims:
+  z: 3 # state vector (u1,u2,p); do not change
+  q: 0  
+  q_0: 2 # static position vector used to calculate edge attributes (x1,x2); do not change
+  n: 4 # number of node types (internal, inlet, outlet, wall); do not change
+  f: 0 
+  g: 0 
+  d: 0 # derived values, change to 1 if using pressure derived model as in original mesh graph net paper
+
+# Solver model (either mesh graph net or thermodynamics informed graph neural network)
+model:
+  model_type: mgn
+  model_location: models/mgn_original_data.pt # mgn with derivitives
+
+  model_attributes:
+    n_hidden: 2 # number of hidden layers in model
+    dim_hidden: 128 # dimension of hidden layers and latent space in model
+    passes: 8 # number of passes through edges
+
+# Remeshing flow match model (either includes global encoding or just local encodings)
+fm_mesh:
+  model_type: global
+  model_location: models/fm_mesh_model_global1.pt
+
+  std_scaling: 0.5
+  model_attributes:
+    n_hidden: 2
+    dim_hidden: 64
+    passes: 12
+
+# Normalization parameters from training
+norm_stats:
+  stats_z:
+    mean: 'stats/vortex_mean_1.pt'
+    std: 'stats/vortex_std_1.pt'
+  stats_q:
+    mean: 'stats/vortex_mean_2.pt'
+    std: 'stats/vortex_std_2.pt'
+
+# shader directory for opengl shaders
+shader_dir: shaders
+
+# screen display parameters
+screen_parameters:
+  width: 800
+  height: 600
+  line_width: 2
+  point_radius: 5

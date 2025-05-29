@@ -59,6 +59,10 @@ class Solver(object):
             self.fm_net = NodeMovementGlobalN(self.fm_model_attributes,self.dims).to(self.device).float()
         else:
             raise ValueError('Invalid model type %s'%(self.fm_model_type))
+
+        self.corrector =  solver_inputs['corrector']
+        if self.corrector:
+            self.corrector_model = 
         self.fm_std_scaling = solver_inputs['fm_mesh']['std_scaling']
 
         self.net.load_state_dict(torch.load(solver_inputs['model']['model_location'],map_location=self.device))
@@ -186,6 +190,10 @@ class Solver(object):
                 #     ax.set_aspect('equal')
                 #     ax.set_title('%i of %i'%(i,len(t_list)-1))
                 #     plt.show()
+        if self.corrector:
+            _,edges,_ = Interface.build_triangle_edges(xt.cpu().numpy(),skew_threshold=0)
+            v_corrector = self.corrector_model(n,edges,xt)
+            xt[mask] += v_corrector[mask]
         return xt
 
     @property

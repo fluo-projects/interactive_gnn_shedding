@@ -44,14 +44,10 @@ class NodeModel(torch.nn.Module):
         self.n_hidden = args.n_hidden
         self.dim_hidden = args.dim_hidden
         self.node_mlp = MLP([2*self.dim_hidden + dims['f'] + dims['g']] + self.n_hidden*[self.dim_hidden] + [self.dim_hidden],activation=activation)
-        # self.agg = agg
 
     def forward(self, x, edge_index, edge_attr, f=None, u=None, batch=None):
         src, dest = edge_index
-        # if self.agg == 'add':
         out = scatter_add(edge_attr, dest, dim=0, dim_size=x.size(0))
-        # elif self.agg == 'mean':
-        # out = scatter_mean(edge_attr, dest, dim=0, dim_size=x.size(0))
         if f is not None:
             out = torch.cat([x, out, f], dim=1)
         elif u is not None:
@@ -234,12 +230,9 @@ class NodeMovement(torch.nn.Module):
         dim_node = self.dims['n']+1
         dim_edge = self.dims['q'] + self.dims['q_0'] + 1
 
-        # self.dims['f'] = 64
-
         # Encoder MLPs
         self.encoder_node = MLP([dim_node] + n_hidden*[dim_hidden] + [dim_hidden], nn.ReLU())
         self.encoder_edge = MLP([dim_edge] + n_hidden*[dim_hidden] + [dim_hidden], nn.ReLU())
-        # self.encoder_globals = MLP([dim_node] + n_hidden*[dim_hidden] + [self.dims['f']], nn.ReLU())
         # Processor MLPs
         self.processor = nn.ModuleList()
         for _ in range(passes):
@@ -252,38 +245,19 @@ class NodeMovement(torch.nn.Module):
         self.decoder_node = MLP([dim_hidden] + n_hidden*[dim_hidden] + [self.dims['q_0']])
 
     def forward(self, q_0, n, t, edge_index): 
-        '''Pre-process'''
-        # z.requires_grad = True
-        # Node attributes 
-        # Eulerian
-        if q_0 is not None:
-            q = q_0
-            # v = z
-
-        # x = torch.cat((n,t),dim=1)
         x = torch.cat((n,t),dim=1)
-        # x = torch.cat((q_0-q_0.mean(0),n,t),dim=1)
         # Edge attributes
         src, dest = edge_index
-        u = q[src] - q[dest]
+        u = q_0[src] - q_0[dest]
         u_norm = torch.norm(u,dim=1).reshape(-1,1)
         edge_attr = torch.cat((u,u_norm), dim=1)
-        # torch.save(edge_attr,'tmp_edge_attr.pt')
-
-        # edge_attr = torch.load('tmp_edge_attr.pt')
 
         '''Encode'''
-        # encoded_global = self.encoder_globals(x)
-        # encoded_global = encoded_global.mean(0)
-        # encoded_global = encoded_global.repeat(x.shape[0],1)
-        # encoded_global = encoded_global.unsqueeze(0)
-
         x = self.encoder_node(x)
         edge_attr = self.encoder_edge(edge_attr)
 
         '''Process'''
         for GraphNet in self.processor:
-            # x_res, edge_attr_res = GraphNet(x, edge_index, edge_attr, f=encoded_global)
             x_res, edge_attr_res = GraphNet(x, edge_index, edge_attr)
             x += x_res
             edge_attr += edge_attr_res
@@ -304,18 +278,13 @@ class NodeMovementGlobal(torch.nn.Module):
         n_hidden = args.n_hidden
         dim_hidden = args.dim_hidden
         self.dims = dims
-        # self.dim_z = self.dims['z']
         self.dim_q = self.dims['q']
-        # dim_node = self.dims['z'] + self.dims['n'] - self.dims['q']
         dim_node = self.dims['n']+1
         dim_edge = self.dims['q'] + self.dims['q_0'] + 1
-
-        # self.dims['f'] = dim_hidden
 
         # Encoder MLPs
         self.encoder_node = MLP([dim_node] + n_hidden*[dim_hidden] + [dim_hidden], nn.ReLU())
         self.encoder_edge = MLP([dim_edge] + n_hidden*[dim_hidden] + [dim_hidden], nn.ReLU())
-        # self.encoder_globals = MLP([dim_node] + n_hidden*[dim_hidden] + [self.dims['f']], nn.ReLU())
         self.encoder_globals = MLP([dim_node] + n_hidden*[dim_hidden] + [dim_hidden], nn.ReLU())
         # Processor MLPs
         self.processor = nn.ModuleList()
@@ -325,37 +294,22 @@ class NodeMovementGlobal(torch.nn.Module):
             GraphNet = MetaLayer(node_model=node_model, edge_model=edge_model)
             self.processor.append(GraphNet)
 
-        # self.decoder_node = MLP([dim_hidden] + n_hidden*[dim_hidden] + [self.dims['q_0']], nn.ReLU())
         self.decoder_node = MLP([dim_hidden] + n_hidden*[dim_hidden] + [self.dims['q_0']])
 
     # @torch.compile
     # @torch.autocast('mps')
     def forward(self, q_0, n, t, edge_index): 
-        '''Pre-process'''
-        # z.requires_grad = True
-        # Node attributes 
-        # Eulerian
-        if q_0 is not None:
-            q = q_0
-            # v = z
-
-        # x = torch.cat((n,t),dim=1)
         x = torch.cat((n,t),dim=1)
-        # x = torch.cat((q_0-q_0.mean(0),n,t),dim=1)
         # Edge attributes
         src, dest = edge_index
-        u = q[src] - q[dest]
+        u = q_0[src] - q_0[dest]
         u_norm = torch.norm(u,dim=1).reshape(-1,1)
         edge_attr = torch.cat((u,u_norm), dim=1)
-        # torch.save(edge_attr,'tmp_edge_attr.pt')
-
-        # edge_attr = torch.load('tmp_edge_attr.pt')
 
         '''Encode'''
         encoded_global = self.encoder_globals(x)
         encoded_global = encoded_global.mean(0)
         encoded_global = encoded_global.repeat(x.shape[0],1)
-        # encoded_global = encoded_global.unsqueeze(0)
 
         x = self.encoder_node(x)
         edge_attr = self.encoder_edge(edge_attr)
@@ -363,7 +317,6 @@ class NodeMovementGlobal(torch.nn.Module):
         '''Process'''
         for GraphNet in self.processor:
             x_res, edge_attr_res = GraphNet(x, edge_index, edge_attr, f=encoded_global)
-            # x_res, edge_attr_res = GraphNet(x, edge_index, edge_attr)
             x += x_res
             edge_attr += edge_attr_res
 
@@ -373,7 +326,6 @@ class NodeMovementGlobal(torch.nn.Module):
         return x
     
 
-# Standard Mesh Graph Net
 class NodeMovementGlobalN(torch.nn.Module):
     def __init__(self, args, dims):
         super(NodeMovementGlobalN, self).__init__()
@@ -382,15 +334,12 @@ class NodeMovementGlobalN(torch.nn.Module):
         n_hidden = args.n_hidden
         dim_hidden = args.dim_hidden
         self.dims = dims
-        # self.dim_z = self.dims['z']
         self.dim_q = self.dims['q']
-        # dim_node = self.dims['z'] + self.dims['n'] - self.dims['q']
         # dim_node = self.dims['n']+1
         dim_node = 3+1
         dim_edge = self.dims['q'] + self.dims['q_0'] + 1
 
         self.dims['f'] = 64
-        # self.dims['f'] = dim_hidden
 
         # Encoder MLPs
         self.encoder_node = MLP([dim_node] + n_hidden*[dim_hidden] + [dim_hidden])
@@ -411,31 +360,17 @@ class NodeMovementGlobalN(torch.nn.Module):
     # @torch.compile
     # @torch.autocast('mps')
     def forward(self, q_0, n, t, edge_index): 
-        '''Pre-process'''
-        # z.requires_grad = True
-        # Node attributes 
-        # Eulerian
-        if q_0 is not None:
-            q = q_0
-            # v = z
-
-        # x = torch.cat((n,t),dim=1)
         x = torch.cat((n,t),dim=1)
-        # x = torch.cat((q_0-q_0.mean(0),n,t),dim=1)
         # Edge attributes
         src, dest = edge_index
-        u = q[src] - q[dest]
+        u = q_0[src] - q_0[dest]
         u_norm = torch.norm(u,dim=1).reshape(-1,1)
         edge_attr = torch.cat((u,u_norm), dim=1)
-        # torch.save(edge_attr,'tmp_edge_attr.pt')
-
-        # edge_attr = torch.load('tmp_edge_attr.pt')
 
         '''Encode'''
         encoded_global = self.encoder_globals(x)
         encoded_global = encoded_global.mean(0)
         encoded_global = encoded_global.repeat(x.shape[0],1)
-        # encoded_global = encoded_global.unsqueeze(0)
 
         x = self.encoder_node(x)
         edge_attr = self.encoder_edge(edge_attr)
@@ -452,69 +387,72 @@ class NodeMovementGlobalN(torch.nn.Module):
 
         return x
 
-# Simple MLP movement with encoder decoder
-class NodeMovementMLP(torch.nn.Module):
-    def __init__(self, args, dims):
-        super(NodeMovementMLP, self).__init__()
+# GNN flow matching corrector model
+class NodeMovementCorrector(torch.nn.Module):
+    def __init__(self, args, dims, fm=False):
+        super(NodeMovementCorrector, self).__init__()
         # Arguments
         passes = args.passes
         n_hidden = args.n_hidden
         dim_hidden = args.dim_hidden
         self.dims = dims
-        # self.dim_z = self.dims['z']
+        self.dim_z = self.dims['z']
         self.dim_q = self.dims['q']
-        # dim_node = self.dims['z'] + self.dims['n'] - self.dims['q']
-        dim_node = self.dims['n']+1 + self.dims['q_0']
+        dim_node = 3
+        if fm:
+            dim_node = 4
         dim_edge = self.dims['q'] + self.dims['q_0'] + 1
 
         # Encoder MLPs
-        self.encoder_node = MLP([dim_node] + n_hidden*[dim_hidden] + [dim_hidden], nn.ReLU())
+        # self.encoder_node = MLP([dim_node] + n_hidden*[dim_hidden] + [dim_hidden], nn.ReLU())
         # self.encoder_edge = MLP([dim_edge] + n_hidden*[dim_hidden] + [dim_hidden], nn.ReLU())
+        self.encoder_node = MLP([dim_node] + n_hidden*[dim_hidden] + [dim_hidden])
+        self.encoder_edge = MLP([dim_edge] + n_hidden*[dim_hidden] + [dim_hidden])
         # Processor MLPs
-        # self.processor = nn.ModuleList()
-        # for _ in range(passes):
-        #     node_model = NodeModel(args, self.dims, nn.ReLU())
-        #     edge_model = EdgeModel(args, self.dims, nn.ReLU())
-        #     GraphNet = MetaLayer(node_model=node_model, edge_model=edge_model)
-        #     self.processor.append(GraphNet)
+        self.processor = nn.ModuleList()
+        for _ in range(passes):
+            # node_model = NodeModel(args, self.dims, nn.ReLU())
+            # edge_model = EdgeModel(args, self.dims, nn.ReLU())
+            node_model = NodeModel(args, self.dims)
+            edge_model = EdgeModel(args, self.dims)
+            GraphNet = MetaLayer(node_model=node_model, edge_model=edge_model)
+            self.processor.append(GraphNet)
 
         self.decoder_node = MLP([dim_hidden] + n_hidden*[dim_hidden] + [self.dims['q_0']])
 
 
-    def forward(self, q_0, n, t, edge_index): 
+    def forward(self, n, edge_index, q_0=None, f=None, g=None, batch=None, t=None): 
         '''Pre-process'''
         # z.requires_grad = True
         # Node attributes 
         # Eulerian
-        if q_0 is not None:
-            q = q_0
-            # v = z
-        # Lagrangian
-        # else:
-        #     q = z[:,:self.dim_q]
-        #     v = z[:,self.dim_q:self.dim_d]
-        # x = torch.cat((v,n), dim=1)
-        x = torch.cat((n,q,t),dim=1)
+        q = q_0
+
+        x = n
+        if not(t is None):
+            x = torch.cat((n,t),dim=1)
+
         # Edge attributes
-        # src, dest = edge_index
-        # u = q[src] - q[dest]
-        # u_norm = torch.norm(u,dim=1).reshape(-1,1)
-        # edge_attr = torch.cat((u,u_norm), dim=1)
+        src, dest = edge_index
+        u = q[src] - q[dest]
+        u_norm = torch.norm(u,dim=1).reshape(-1,1)
+        edge_attr = torch.cat((u,u_norm), dim=1)
 
         '''Encode'''
         x = self.encoder_node(x)
-        # edge_attr = self.encoder_edge(edge_attr)
+        edge_attr = self.encoder_edge(edge_attr)
 
         '''Process'''
-        # for GraphNet in self.processor:
-        #     x_res, edge_attr_res = GraphNet(x, edge_index, edge_attr)
-        #     x += x_res
-        #     edge_attr += edge_attr_res
+        for GraphNet in self.processor:
+            x_res, edge_attr_res = GraphNet(x, edge_index, edge_attr, f=f, u=g, batch=batch)
+            x += x_res
+            edge_attr += edge_attr_res
 
         '''Decode'''
         x = self.decoder_node(x)
 
         return x
+
 
 if __name__ == '__main__':
     pass

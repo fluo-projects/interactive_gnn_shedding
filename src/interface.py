@@ -930,9 +930,10 @@ class Interface:
 
         # draw text info
         self.draw_text('FPS: %i'%(self.clock.get_fps()),50,50,24)
-        self.draw_text('Auto Edge: %s'%(self.mesh),50,50+24+5,24)
-        self.draw_text('Mode: %s'%(self.mode),50,50+2*(24+5),24)
-        self.draw_text('Field: %s'%(self.field_name),50,50+3*(24+5),24)
+        self.draw_text('%s'%('Running' if self.update_state else 'Paused'),50,50+24+5,24)
+        self.draw_text('Auto Edge: %s'%(self.mesh),50,50+2*(24+5),24)
+        self.draw_text('Mode: %s'%(self.mode),50,50+3*(24+5),24)
+        self.draw_text('Field: %s'%(self.field_name),50,50+4*(24+5),24)
         
         # for mesh saves and loading
         if self.input_mode:

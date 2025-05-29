@@ -1,20 +1,22 @@
-# Interactive GNN for Vortex Shedding 
+# Interactive Graph Neural Networks for Vortex Shedding 
 
-This repo contains a Pygame-opengl framework for a interactive gnn simulation of vortex shedding around a cylinder. This work is heavily inspired by Hernández, Badías, Chinesta and Cueto in their Thermodynamics-informed graph neural networks (TIGNN) paper ([link to github](https://github.com/quercushernandez/ThermodynamicsGNN/tree/main)) as well as earlier work in Mesh Graph Nets (MGN) by Pfaff, Fortunato, Sanchez-Gonzalez, and Battaglia ([link to github](https://github.com/google-deepmind/deepmind-research/tree/master/meshgraphnets)). For more information about the models, check the credit section for the respective papers.
+This repo contains a Pygame-opengl framework for a interactive graph neural network (GNN) simulation of vortex shedding around a cylinder. This work is heavily inspired by Hernández, Badías, Chinesta and Cueto in their Thermodynamics-informed graph neural networks (TIGNN) paper ([link to github](https://github.com/quercushernandez/ThermodynamicsGNN/tree/main)) as well as earlier work in Mesh Graph Nets (MGN) by Pfaff, Fortunato, Sanchez-Gonzalez, and Battaglia ([link to github](https://github.com/google-deepmind/deepmind-research/tree/master/meshgraphnets)). For more information about the models, check the credit section for the respective papers. 
 
-It should be noted that non of these models are meant to be a actual prediction of flow behavior and is more of a proof of concept and demonstration of what is possible with current GNN models. Morever, the models are somewhat sensitive to the underlying mesh and ocassionally give different results under the same cylinders or other bodies used.
+GNN initially captured my attention due to their highly adaptable structure which allows for finer meshes in regions of importance over more traditional image convolutional based approaches. This is of particular usefulness in fluid applications where much of a mesh may have large regions of bulk flow which do not spatially vary signifcantly (which would allow for coarser meshes) but are still nonetheless important to the broader development of local behaviors of interest. Additionally, these types of models naturally lend themselves to adaptive mesh refinement for efficient fluid simulations in more complex fluid simulations (combustion, hypersonics, etc). After reading the papers above, I wanted to create a interactive build of the GNN models with on line simulations to demonstrate this adapativeness and capabilities in a interactive way. However, both of the above papers had gaps in the generation of the meshes and handling of boundary conditions for vortex shedding, so I developed customized models to also generate boundary conditions and new meshes. More information is available in later sections of this readme on the customized models.
+
+It should be noted that non of these models are meant to be a actual prediction of flow behavior and is more of a proof of concept and demonstration of what is possible with current GNN models. Morever, the models are somewhat sensitive to the underlying mesh and ocassionally give different results under the same boundary conditions.
 
 # Components of Repository
 
-## Interactive GNN Window
+## Interactive GNN Application
 
-The interactive 
+The interactive pygame wrapper consists of two modes, a graph editing mode and a contour visualization mode. In the graph editing mode, the user can interface with the underlying graph and modify it to a desired state. The new state can also be saved as a pickle file and reloaded as needed. The graph editing mode allows users to move nodes, change the node types, and remesh the field as desired. The contour visualization mode allows the fluid properties to be observed much easier than the graph representation. Below is a recording of the interactive GNN application using the default model.
 
 Run and recorded on m2 macbook air
 
 ## Animation Handler
 
-The animation handler allows for a non interactive but time evolving mesh to be simulated. A view of the animations is ebedded below.
+The animation handler allows for a non interactive but time evolving mesh to be simulated. A view of the generated animations is ebedded below.
 
 ![Animation](/anim/animation.gif)
 
@@ -44,16 +46,17 @@ To run the time evolution animations run
 
 `$ python anim_main.py`
 
-Similar to the base pygame interface, the parameters can be modified by the parameters.yaml file (uses this file to select models) and the anim_parameters.yaml file (uses this file to create animations). If custom YAML files are desired, simply run the following.
+Similar to the base pygame interface, the parameters can be modified by the parameters.yaml file (uses this file to select and setup models) and the anim_parameters.yaml file (uses this file to create animations). If custom YAML files are desired, simply run the following.
 
 `$ python anim_main.py --parameter custom_parameters.yaml --anim_parameter custom_anim_parameters.yaml`
 
 
-## Controls:
+## Controls for Interactive Application
 w,a,s,d: move screen
 scroll: zoom
 tab: toggle mode from points to contour fields
 g: recenter screen
+space bar: toggle model simulation
 number keys: change field type
     1: x velocity
     2: y velocity
@@ -72,12 +75,16 @@ in point mode:
     left click: create new node/move existing node
     right click: remove node/edge
     c: change node type
+        black: internal fluid node
+        blue: inlet node
+        orange: outlet node
+        green: wall node (both exterior and of body of interest)
 
 escape: exit
 
 # Information
 
-Using the base models found in the above papers, the models were modified and retrained on the vortex shedding data found in the TIGNN github. Modifications on both the training data in the TIGNN github and the models themselves were conducted, mainly consisting of converting and training the model to triangular based meshes, allowing the models to train on boundary condition cells, and a implementation of a custom flow matching gnn remesher. All together, the retrained models, custom meshing model and pygame wrapper allows for interactive session whhere the GNN models can be modified as desired. These models are relatively stable but do occasionally destabilize to Nans in ill poised meshes (which occasionally occur with the custom meshing model as well). This repo contains 4 models as follows each with their unique behaviors.
+Using the base models found in the above papers, the models were modified and retrained on the vortex shedding data found in the TIGNN github. Modifications on both the training data in the TIGNN github and the models themselves were conducted, mainly consisting of converting and training the model to triangular based meshes, allowing the models to train on boundary condition nodes, and a implementation of a custom flow matching gnn remesher.  All together, the retrained models, custom meshing model and pygame wrapper allows for interactive session whhere the GNN models can be modified as desired. These models are relatively stable but do occasionally destabilize to Nans in ill poised meshes (which occasionally occur with the custom meshing model as well). This repo contains 4 models as follows each with their unique behaviors.
 
 1. TIGNN trained on TIGNN dataset
 2. MGN trained on TIGNN dataset with direct pressure predictions
@@ -94,7 +101,7 @@ There are 3 MGN networks included in this repo, two trained on the modified TIGN
 
 Between the 3 MGN networks, the default is the MGN network trained on the TIGNN dataset with $\frac{dp}{dt}$ predictions. This is because the TIGNN dataset is much smaller and thus faster to run over the original vortex shedding dataset. Additionally, the bondary conditions and meshes are harder to create (original MGN vortex shed dataset has a boundary layer mesh which did not train well with the current flow matching mesh model). The direct pressure prediction model was also much more unstable and did not give any meaningful results before diverging to Nans.
 
-I also had difficulty training the MGN model on the original MGN dataset.
+I also had difficulty training the MGN model on the original MGN vortex shed dataset where .
 Also the orininal MGN paper called for a direct pressure 
 
 It should be once again noted that non of these models are meant to be a actual prediction of flow behavior and is more of a proof of concept and demonstration of what is possible with current GNN models.
@@ -120,6 +127,7 @@ While the base model does not use the thermodyanamics-informed graph neural netw
 Also includes scripts to generate animations in anim directory
 
 Changed mesh from quad to triangular mesh using delaunay triangles. 
+Changed normalizations
 Unstructured the mesh using delaunay traingles
 
 Baseline models created from GITHUB
@@ -138,11 +146,11 @@ added noise to node positions during training for greater robustness while movin
 
 
 A custom flow matching model was developed for this project. The reason for this was several fold. 
-1. As the principal objective of the project was to provide a real-time interactive simulation (rather than physically accurate simulations), a dramatic variation in nodes would cause fluctuations in framerates. Using a more traditional meshing algorithm, it would be more difficult to ensure good mesh creation with a fixed number of nodes without a much more involved algorithm. 
-2. I am not entirely sure how the meshes was conducted with what parameters and algorithm. Additionally, the models do seem to be somewhat sensitive to the underlying mesh and thus a different meshing algorithm could possibly cause the model become unstable. Therefore, a unsupervised method to match the target mesh distributions is more desirable to keep the model predicting on a statistically similar mesh as the training data.
+1. As the principal objective of the project was to provide a real-time interactive simulation (rather than purely physically accurate simulations), a dramatic variation in nodes would cause fluctuations in framerates. Using a more traditional meshing algorithm, it would be more difficult to ensure good mesh creation with a fixed number of nodes without a much more involved algorithm. 
+2. I am not entirely sure how the meshes was generated with what parameters and algorithm. Additionally, the models do seem to be somewhat sensitive to the underlying mesh and thus a different meshing algorithm could possibly cause the model become unstable. Therefore, a unsupervised method to match the target mesh distributions is more desirable to keep the model predicting on a statistically similar mesh as the training data.
 3. I wanted to try creating a GNN based flow matching method to see how well it works and practice my flow matching abilities.
 
-The flow matching GNN mesher adds noise to a already formed mesh then denoises it, using the different wall, inlet, and outlet nodes to guide the denoiser to create a new mesh. The GNN also includes a global encoding as that qualitatively seemed to improve the mesh quality
+The flow matching GNN mesher adds noise to a already formed mesh then denoises it, using the different wall, inlet, and outlet nodes to guide the denoiser to create a new mesh. The GNN also includes a global encoding as that qualitatively seemed to improve the mesh quality. A separate corrector model was also attempted but did not reasonably improve the mesh so it has been disabled in the paramters.yaml file.
 
 The generate mesh method initally assumes a random uniform distribution across the domain. However, in successive noisers and flow matching steps, the distribution approaches a improved mesh with mesh refinement near bodies of interest.
 

@@ -16,18 +16,19 @@ initial_conditions:
 
   pkl_fname: False # replace with file name if loading from pickle file from saved state. Will preferrentially load pickle file over above initial conditions
 
-# dimensions of each parameter
-dims:
-  z: 3 # state vector (u1,u2,p); do not change
-  q: 0  
-  q_0: 2 # static position vector used to calculate edge attributes (x1,x2); do not change
-  n: 4 # number of node types (internal, inlet, outlet, wall); do not change
-  f: 0 
-  g: 0 
-  d: 0 # direct prediction values, change to 1 if using direct pressure model as in original mesh graph net paper
 
 # Solver model (either mesh graph net or thermodynamics informed graph neural network)
 model:
+  # dimensions of each parameter
+  dims:
+    z: 3 # state vector (u1,u2,p); do not change
+    q: 0  
+    q_0: 2 # static position vector used to calculate edge attributes (x1,x2); do not change
+    n: 4 # number of node types (internal, inlet, outlet, wall); do not change
+    f: 0 
+    g: 0 
+    d: 0 # direct prediction values, change to 1 if using direct pressure model as in original mesh graph net paper
+
   model_type: mgn
   model_location: models/mgn.pt # mgn with derivitives
   # model_location: models/mgn_direct_p.pt # mgn with direct predictions for pressure, did not work well
@@ -41,6 +42,15 @@ model:
 
 # Remeshing flow match model (either includes global encoding or just local encodings)
 fm_mesh:
+  dims:
+    z: 3 # state vector (u1,u2,p); do not change
+    q: 0  
+    q_0: 2 # static position vector used to calculate edge attributes (x1,x2); do not change
+    n: 3 # number of node types (internal, exterior bcs, interior bcs); do not change
+    f: 64
+    g: 0 
+    d: 0 # direct prediction values, change to 1 if using direct pressure model as in original mesh graph net paper
+
   model_type: global
 
   model_location: models/fm_mesh_model_global1.pt
@@ -52,6 +62,18 @@ fm_mesh:
 
   corrector: False
   corrector_location: models/fm_mesh_corrector.pt
+  corrector_model_attributes:
+    n_hidden: 2
+    dim_hidden: 64
+    passes: 12
+  corrector_dims:
+    z: 3 # state vector (u1,u2,p); do not change
+    q: 0  
+    q_0: 2 # static position vector used to calculate edge attributes (x1,x2); do not change
+    n: 3 # number of node types (exterior bcs, interior bcs); do not change
+    f: 0
+    g: 0 
+    d: 0 # direct prediction values, change to 1 if using direct pressure model as in original mesh graph net paper
 
   # uses ReLU except for last decoder, if desired, must change model.py code to all ReLU except last decoder
   # model_location: models/fm_mesh_model_global.pt

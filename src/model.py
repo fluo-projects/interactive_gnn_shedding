@@ -26,7 +26,7 @@ class EdgeModel(torch.nn.Module):
         super(EdgeModel, self).__init__()
         self.n_hidden = args.n_hidden
         self.dim_hidden = args.dim_hidden
-        self.edge_mlp = MLP([3*self.dim_hidden + dims['g']] + self.n_hidden*[self.dim_hidden] + [self.dim_hidden],activation=activation)
+        self.edge_mlp = MLP([3*self.dim_hidden] + self.n_hidden*[self.dim_hidden] + [self.dim_hidden],activation=activation)
 
     def forward(self, src, dest, edge_attr, u=None, batch=None):
         if u is not None:
@@ -43,7 +43,7 @@ class NodeModel(torch.nn.Module):
         super(NodeModel, self).__init__()
         self.n_hidden = args.n_hidden
         self.dim_hidden = args.dim_hidden
-        self.node_mlp = MLP([2*self.dim_hidden + dims['f'] + dims['g']] + self.n_hidden*[self.dim_hidden] + [self.dim_hidden],activation=activation)
+        self.node_mlp = MLP([2*self.dim_hidden + dims['f']] + self.n_hidden*[self.dim_hidden] + [self.dim_hidden],activation=activation)
 
     def forward(self, x, edge_index, edge_attr, f=None, u=None, batch=None):
         src, dest = edge_index
@@ -87,9 +87,10 @@ class TIGNN(torch.nn.Module):
         dim_hidden = args.dim_hidden
         self.dims = dims
         self.dim_z = self.dims['z']
-        self.dim_q = self.dims['q']
-        dim_node = self.dims['z'] + self.dims['n'] - self.dims['q']
-        dim_edge = self.dims['q'] + self.dims['q_0'] + 1
+        # self.dim_q = self.dims['q']
+        # dim_node = self.dims['z'] + self.dims['n'] - self.dims['q']
+        dim_node = self.dims['z'] + self.dims['n']
+        dim_edge = self.dims['q_0'] + 1
 
         # Encoder MLPs
         self.encoder_node = MLP([dim_node] + n_hidden*[dim_hidden] + [dim_hidden])
@@ -174,9 +175,8 @@ class MeshGraphNet(torch.nn.Module):
         dim_hidden = args.dim_hidden
         self.dims = dims
         self.dim_z = self.dims['z']
-        self.dim_q = self.dims['q']
-        dim_node = self.dims['z'] + self.dims['n'] - self.dims['q']
-        dim_edge = self.dims['q'] + self.dims['q_0'] + 1
+        dim_node = self.dims['z'] + self.dims['n']
+        dim_edge = self.dims['q_0'] + 1
 
         # Encoder MLPs
         self.encoder_node = MLP([dim_node] + n_hidden*[dim_hidden] + [dim_hidden])
@@ -226,9 +226,8 @@ class NodeMovement(torch.nn.Module):
         n_hidden = args.n_hidden
         dim_hidden = args.dim_hidden
         self.dims = dims
-        self.dim_q = self.dims['q']
         dim_node = self.dims['n']+1
-        dim_edge = self.dims['q'] + self.dims['q_0'] + 1
+        dim_edge = self.dims['q_0'] + 1
 
         # Encoder MLPs
         self.encoder_node = MLP([dim_node] + n_hidden*[dim_hidden] + [dim_hidden], nn.ReLU())
@@ -278,9 +277,8 @@ class NodeMovementGlobal(torch.nn.Module):
         n_hidden = args.n_hidden
         dim_hidden = args.dim_hidden
         self.dims = dims
-        self.dim_q = self.dims['q']
         dim_node = self.dims['n']+1
-        dim_edge = self.dims['q'] + self.dims['q_0'] + 1
+        dim_edge = self.dims['q_0'] + 1
 
         # Encoder MLPs
         self.encoder_node = MLP([dim_node] + n_hidden*[dim_hidden] + [dim_hidden], nn.ReLU())
@@ -334,12 +332,11 @@ class NodeMovementGlobalN(torch.nn.Module):
         n_hidden = args.n_hidden
         dim_hidden = args.dim_hidden
         self.dims = dims
-        self.dim_q = self.dims['q']
-        # dim_node = self.dims['n']+1
-        dim_node = 3+1
-        dim_edge = self.dims['q'] + self.dims['q_0'] + 1
+        dim_node = self.dims['n']+1
+        # dim_node = 3+1
+        dim_edge = self.dims['q_0'] + 1
 
-        self.dims['f'] = 64
+        # self.dims['f'] = 64
 
         # Encoder MLPs
         self.encoder_node = MLP([dim_node] + n_hidden*[dim_hidden] + [dim_hidden])
@@ -397,11 +394,10 @@ class NodeMovementCorrector(torch.nn.Module):
         dim_hidden = args.dim_hidden
         self.dims = dims
         self.dim_z = self.dims['z']
-        self.dim_q = self.dims['q']
-        dim_node = 3
+        dim_node = self.dims['n']
         if fm:
-            dim_node = 4
-        dim_edge = self.dims['q'] + self.dims['q_0'] + 1
+            dim_node = self.dims['n'] + 1
+        dim_edge = self.dims['q_0'] + 1
 
         # Encoder MLPs
         # self.encoder_node = MLP([dim_node] + n_hidden*[dim_hidden] + [dim_hidden], nn.ReLU())
@@ -421,20 +417,14 @@ class NodeMovementCorrector(torch.nn.Module):
         self.decoder_node = MLP([dim_hidden] + n_hidden*[dim_hidden] + [self.dims['q_0']])
 
 
-    def forward(self, n, edge_index, q_0=None, f=None, g=None, batch=None, t=None): 
-        '''Pre-process'''
-        # z.requires_grad = True
-        # Node attributes 
-        # Eulerian
-        q = q_0
-
+    def forward(self, n, edge_index, q_0, t=None): 
         x = n
         if not(t is None):
             x = torch.cat((n,t),dim=1)
 
         # Edge attributes
         src, dest = edge_index
-        u = q[src] - q[dest]
+        u = q_0[src] - q_0[dest]
         u_norm = torch.norm(u,dim=1).reshape(-1,1)
         edge_attr = torch.cat((u,u_norm), dim=1)
 
@@ -444,7 +434,7 @@ class NodeMovementCorrector(torch.nn.Module):
 
         '''Process'''
         for GraphNet in self.processor:
-            x_res, edge_attr_res = GraphNet(x, edge_index, edge_attr, f=f, u=g, batch=batch)
+            x_res, edge_attr_res = GraphNet(x, edge_index, edge_attr)
             x += x_res
             edge_attr += edge_attr_res
 

@@ -4,7 +4,7 @@ from sklearn.neighbors import NearestNeighbors
 from scipy.spatial import Delaunay
 
 from src.interface import Interface
-from src.model import TIGNN,MeshGraphNet,NodeMovement,NodeMovementGlobal,NodeMovementGlobalN
+from src.model import TIGNN,MeshGraphNet,NodeMovement,NodeMovementGlobal,NodeMovementGlobalN,NodeMovementCorrector
 
 from matplotlib import pyplot as plt
 
@@ -41,7 +41,7 @@ class Solver(object):
                 self.stats_q[key] = torch.tensor(self.stats_q[key],device=self.device)
 
         # Net Parameters
-        self.dims = solver_inputs['dims']
+        self.dims = solver_inputs['model']['dims']
         self.model_type = solver_inputs['model']['model_type']
         self.model_attributes = model_attributes(solver_inputs['model']['model_attributes'])
         if self.model_type == 'tignn':
@@ -51,22 +51,26 @@ class Solver(object):
         else:
             raise ValueError('Invalid model type %s'%(self.model_type))
 
+        self.fm_dims = solver_inputs['fm_mesh']['dims']
         self.fm_model_type = solver_inputs['fm_mesh']['model_type']
         self.fm_model_attributes = model_attributes(solver_inputs['fm_mesh']['model_attributes'])
         if self.fm_model_type == 'local':
-            self.fm_net = NodeMovement(self.fm_model_attributes,self.dims).to(self.device).float()
+            self.fm_net = NodeMovement(self.fm_model_attributes,self.fm_dims).to(self.device).float()
         if self.fm_model_type == 'global':
-            self.fm_net = NodeMovementGlobalN(self.fm_model_attributes,self.dims).to(self.device).float()
+            self.fm_net = NodeMovementGlobalN(self.fm_model_attributes,self.fm_dims).to(self.device).float()
         else:
             raise ValueError('Invalid model type %s'%(self.fm_model_type))
 
-        self.corrector =  solver_inputs['corrector']
-        if self.corrector:
-            self.corrector_model = 
-        self.fm_std_scaling = solver_inputs['fm_mesh']['std_scaling']
-
         self.net.load_state_dict(torch.load(solver_inputs['model']['model_location'],map_location=self.device))
         self.fm_net.load_state_dict(torch.load(solver_inputs['fm_mesh']['model_location'],map_location=self.device))
+
+        self.corrector =  solver_inputs['fm_mesh']['corrector']
+        self.corrector_model_attributes = model_attributes(solver_inputs['fm_mesh']['corrector_model_attributes'])
+        if self.corrector:
+            self.corrector_model = NodeMovementCorrector(self.corrector_model_attributes,solver_inputs['fm_mesh']['corrector_dims']).to(self.device).float()
+            self.corrector_model.load_state_dict(torch.load(solver_inputs['fm_mesh']['corrector_location'],map_location=self.device))
+
+        self.fm_std_scaling = solver_inputs['fm_mesh']['std_scaling']
 
         self.dt = solver_inputs['dt']
 
@@ -192,7 +196,8 @@ class Solver(object):
                 #     plt.show()
         if self.corrector:
             _,edges,_ = Interface.build_triangle_edges(xt.cpu().numpy(),skew_threshold=0)
-            v_corrector = self.corrector_model(n,edges,xt)
+            with torch.no_grad():
+                v_corrector = self.corrector_model(n,edges.to(self.device),xt)
             xt[mask] += v_corrector[mask]
         return xt
 

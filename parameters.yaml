@@ -22,11 +22,9 @@ model:
   # dimensions of each parameter
   dims:
     z: 3 # state vector (u1,u2,p); do not change
-    q: 0  
     q_0: 2 # static position vector used to calculate edge attributes (x1,x2); do not change
     n: 4 # number of node types (internal, inlet, outlet, wall); do not change
-    f: 0 
-    g: 0 
+    f: 0 # global encoding
     d: 0 # direct prediction values, change to 1 if using direct pressure model as in original mesh graph net paper
 
   model_type: mgn
@@ -44,11 +42,9 @@ model:
 fm_mesh:
   dims:
     z: 3 # state vector (u1,u2,p); do not change
-    q: 0  
     q_0: 2 # static position vector used to calculate edge attributes (x1,x2); do not change
     n: 3 # number of node types (internal, exterior bcs, interior bcs); do not change
-    f: 64
-    g: 0 
+    f: 64 # global encoding, do not modify
     d: 0 # direct prediction values, change to 1 if using direct pressure model as in original mesh graph net paper
 
   model_type: global
@@ -68,11 +64,9 @@ fm_mesh:
     passes: 12
   corrector_dims:
     z: 3 # state vector (u1,u2,p); do not change
-    q: 0  
     q_0: 2 # static position vector used to calculate edge attributes (x1,x2); do not change
     n: 3 # number of node types (exterior bcs, interior bcs); do not change
     f: 0
-    g: 0 
     d: 0 # direct prediction values, change to 1 if using direct pressure model as in original mesh graph net paper
 
   # uses ReLU except for last decoder, if desired, must change model.py code to all ReLU except last decoder

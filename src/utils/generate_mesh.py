@@ -56,7 +56,7 @@ def generate_mesh(solver: Solver,external_walls,internal_walls,inlet,outlet,nint
 
     # internal wall stored as segments that form a closed loop (last point connects to first point)
     # internal_walls['points'] = torch.tensor(internal_walls['points'])
-    segment_len = (internal_walls['points']-torch.roll(internal_walls['points'],1,0)).norm(dim=1)
+    segment_len = (internal_walls['points']-torch.roll(internal_walls['points'],-1,0)).norm(dim=1)
     cum_len = torch.cumsum(segment_len,0)
     ds = cum_len[-1]/internal_walls['npoints']
     s_locations = torch.linspace(0,cum_len[-1]-ds,internal_walls['npoints'])

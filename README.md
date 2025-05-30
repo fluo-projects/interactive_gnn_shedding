@@ -13,6 +13,7 @@ It should be noted that these models are not meant to be a actual predictions of
 The interactive pygame wrapper consists of two modes, a graph editing mode and a contour visualization mode. In the graph editing mode, the user can interface with the underlying graph and modify it to a desired state. The new state can also be saved as a pickle file and reloaded as needed. The graph editing mode allows users to move nodes, change the node types, and remesh the field as desired. The contour visualization mode allows the fluid properties to be observed much easier than the graph representation. Below is a recording of the interactive GNN application using the default model.
 
 Run and recorded on m2 macbook air.
+
 ![Screen Capture](/anim/interactive_demo.gif)
 
 ## Animation Handler
@@ -24,6 +25,7 @@ The animation handler is also included to provide allows for a non interactive b
 
 Additionally, the animation handler can also produce a animation of how the mesh evolves as shown below.
 
+![Rotating plate graph](/anim/rotating_plate_anim_graph.gif)
 ![Graph animation](/anim/animation_graph.gif)
 
 # Code Use
@@ -74,11 +76,11 @@ tab: toggle mode from points to contour fields
 g: recenter screen 
 space bar: toggle model simulation  
 number keys: change field type  
-    1: x velocity
-    2: y velocity
-    3: pressure
-    4: learned energy (for tignn only)
-    5: learned entropy (for tignn only)
+   1: x velocity  
+   2: y velocity  
+   3: pressure  
+   4: learned energy (for tignn only)  
+   5: learned entropy (for tignn only)  
 
 m: toggle auto edge creation  
 n: remesh all internal nodes using flow matching model 

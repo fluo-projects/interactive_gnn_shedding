@@ -2,9 +2,9 @@
 
 This repo contains a Pygame-opengl framework for a interactive graph neural network (GNN) simulation of vortex shedding around a cylinder. This work is heavily inspired by Hernández, Badías, Chinesta and Cueto in their Thermodynamics-informed graph neural networks (TIGNN) paper ([link to github](https://github.com/quercushernandez/ThermodynamicsGNN/tree/main)) as well as earlier work in Mesh Graph Nets (MGN) by Pfaff, Fortunato, Sanchez-Gonzalez, and Battaglia ([link to github](https://github.com/google-deepmind/deepmind-research/tree/master/meshgraphnets)). For more information about the models, check the credit section for the respective papers. 
 
-GNN initially captured my attention due to their highly adaptable structure which allows for finer meshes in regions of importance over more traditional image convolutional based approaches. This is of particular usefulness in fluid applications where much of a mesh may have large regions of bulk flow which do not spatially vary signifcantly (which would allow for coarser meshes) but are still nonetheless important to the broader development of local behaviors of interest. Additionally, these types of models naturally lend themselves to adaptive mesh refinement for efficient fluid simulations in more complex fluid simulations (combustion, hypersonics, etc). After reading the papers above, I wanted to create a interactive build of the GNN models with on line simulations to demonstrate this adapativeness and capabilities in a interactive way. However, both of the above papers had gaps in the generation of the meshes and handling of boundary conditions for vortex shedding, so I developed customized models to also generate boundary conditions and new meshes. More information is available in later sections of this readme on the customized models.
+GNN initially captured my attention due to their highly adaptable structure which allows for finer meshes in regions of importance over more traditional image convolutional based approaches. This is of particular usefulness in fluid applications where much of a mesh may have large regions of bulk flow which do not spatially vary signifcantly (which would allow for coarser meshes) but are still nonetheless important to the broader development of local behaviors of interest. Additionally, these types of models naturally lend themselves to adaptive mesh refinement for efficient fluid simulations in more complex fluid simulations (combustion, hypersonics, etc). After reading the papers above, I wanted to create a build of the GNN models with on line simulations to demonstrate this adapativeness and capabilities in an interactive way. However, both of the above papers had gaps in the generation of the meshes and handling of boundary conditions for vortex shedding, so I developed customized models to also generate boundary conditions and new meshes. More information is available in later sections of this readme on the customized models.
 
-It should be noted that non of these models are meant to be a actual prediction of flow behavior and is more of a proof of concept and demonstration of what is possible with current GNN models. Morever, the models are somewhat sensitive to the underlying mesh and ocassionally give different results under the same boundary conditions.
+It should be noted that these models are not meant to be a actual predictions of flow behavior and is more of a proof of concept and demonstration of what is possible with current GNN models. Morever, the models are somewhat sensitive to the underlying mesh and ocassionally give different results under the same boundary conditions.
 
 # Components of Repository
 
@@ -17,14 +17,14 @@ Run and recorded on m2 macbook air.
 
 ## Animation Handler
 
-The animation handler allows for a non interactive but time evolving mesh to be simulated. A view of the generated animations is ebedded below.
+The animation handler is also included to provide allows for a non interactive but time evolving mesh to be simulated. This is especially useful as generating meshes in the interactive application by moving each node at a time is quite tedious. A view of a few sample animations is ebedded below.
 
-![Animation](/anim/rotating_plate_anim.gif)
-![Animation](/anim/animation.gif)
+![Rotating plate](/anim/rotating_plate_anim.gif)
+![Shifting shapes](/anim/animation.gif)
 
 Additionally, the animation handler can also produce a animation of how the mesh evolves as shown below.
 
-![Alt Text](/anim/animation_graph.gif)
+![Graph animation](/anim/animation_graph.gif)
 
 # Code Use
 
@@ -50,7 +50,7 @@ Pytorch specific dependencies only installs after pytorch is installed
 
 ## Running the code
 
-For the pure pygame interface run 
+For the pure pygame interactive interface run 
 
 `$ python main.py`
 
@@ -138,45 +138,24 @@ The mesh generatation method generates a mesh from scratch from a initally assum
 
 # Credit
 
-TIGNN and pytorch model framework from
-@article{Hern_ndez_2024,
-   title={Thermodynamics-Informed Graph Neural Networks},
-   volume={5},
-   ISSN={2691-4581},
-   url={http://dx.doi.org/10.1109/TAI.2022.3179681},
-   DOI={10.1109/tai.2022.3179681},
-   number={3},
-   journal={IEEE Transactions on Artificial Intelligence},
-   publisher={Institute of Electrical and Electronics Engineers (IEEE)},
-   author={Hernández, Quercus and Badías, Alberto and Chinesta, Francisco and Cueto, Elías},
-   year={2024},
-   month=mar, pages={967–976} }
+#### TIGNN and Pytorch Model Framework
+Hernández, Q., Badías, A., Chinesta, F., & Cueto, E. (2024).
+Thermodynamics-Informed Graph Neural Networks. IEEE Transactions on Artificial Intelligence, 5(3), 967–976.
+https://doi.org/10.1109/TAI.2022.3179681
+[Github](https://github.com/quercushernandez/ThermodynamicsGNN/tree/main)
 
-[Link to Github](https://github.com/quercushernandez/ThermodynamicsGNN/tree/main)
+#### Original Mesh Graph Net Paper (Default Model)
+Pfaff, T., Fortunato, M., Sanchez-Gonzalez, A., & Battaglia, P. W. (2021).
+Learning Mesh-Based Simulation with Graph Networks.
+International Conference on Learning Representations (ICLR).
+https://doi.org/10.48550/arXiv.2010.03409
+[Github](https://github.com/google-deepmind/deepmind-research/tree/master/meshgraphnets)
 
-Original Mesh Graph Net Paper (default model)
-@inproceedings{pfaff2021learning,
-  title={Learning Mesh-Based Simulation with Graph Networks},
-  author={Tobias Pfaff and
-          Meire Fortunato and
-          Alvaro Sanchez-Gonzalez and
-          Peter W. Battaglia},
-  booktitle={International Conference on Learning Representations},
-  year={2021}
-}
+#### Substantiation of Generality of Mesh Graph Nets
 
-[Link to Github](https://github.com/google-deepmind/deepmind-research/tree/master/meshgraphnets)
-
-Justification and substantiation of generality of mesh graph nets
-@misc{schmöcker2024generalizationcapabilitiesmeshgraphnetsunseen,
-      title={Generalization capabilities of MeshGraphNets to unseen geometries for fluid dynamics}, 
-      author={Robin Schmöcker and Alexander Henkes and Julian Roth and Thomas Wick},
-      year={2024},
-      eprint={2408.06101},
-      archivePrefix={arXiv},
-      primaryClass={cs.LG},
-      url={https://arxiv.org/abs/2408.06101}, 
-}
+Schmöcker, R., Henkes, A., Roth, J., & Wick, T. (2024).
+Generalization capabilities of MeshGraphNets to unseen geometries for fluid dynamics.
+https://doi.org/10.48550/arXiv.2408.06101
 
 ## Notes:
 - Seems somewhat sensitive to mesh generation, could maybe add more noise into training to lower propensity of node positions on broader characteristics

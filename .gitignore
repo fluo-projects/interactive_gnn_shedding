@@ -2,6 +2,6 @@ tmp*
 *.pyc
 .DS_store
 *.gif
-!anim
+!anim/*.gif
 *.pkl
 
